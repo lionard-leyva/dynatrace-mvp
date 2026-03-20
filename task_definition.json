@@ -1,0 +1,186 @@
+{
+	"containerDefinitions": [
+		{
+			"essential": true,
+			"name": "dynatrace-fluentbit",
+			"cpu": 512,
+			"memory": 1024,
+			"image": "964184054321.dkr.ecr.eu-west-1.amazonaws.com/aws-for-fluent-bit:2.32.0.20240304",
+			"firelensConfiguration": {
+				"type": "fluentbit",
+				"options": {
+					"enable-ecs-log-metadata": "true",
+					"config-file-type": "file",
+					"config-file-value": "/fluent-bit/configs/parse-json.conf"
+				}
+			},
+			"logConfiguration": {
+				"logDriver": "awslogs",
+				"options": {
+					"awslogs-group": "/aws/ecs/task/ib-cc-crm-hub-int-security-mgt-service",
+					"awslogs-region": "eu-west-1",
+					"awslogs-stream-prefix": "firelens"
+				}
+			}
+		},
+		{
+			"name": "ib-cc-crm-hub-int-security-mgt-service",
+			"cpu": 512,
+			"memory": 1024,
+			"image": "964184054321.dkr.ecr.eu-west-1.amazonaws.com/crm-hub/security-mgt:latest",
+			"portMappings": [
+				{
+					"containerPort": 5051,
+					"hostPort": 5051,
+					"protocol": "tcp"
+				}
+			],
+			"essential": true,
+			"logConfiguration": {
+				"logDriver": "awsfirelens",
+				"options": {
+					"Name": "http",
+					"Host": "psk34092.live.dynatrace.com",
+					"TLS": "on",
+					"TLS.verify": "off",
+					"Format": "json",
+					"Json_Date_Key": "timestamp",
+					"Json_Date_Format": "iso8601",
+					"Header": "Content-Type application/json; charset=utf-8",
+					"Port": "443",
+					"Allow_Duplicated_Headers": "false",
+					"retry_limit": "2"
+				},
+				"secretOptions": [
+					{
+						"name": "URI",
+						"valueFrom": "arn:aws:ssm:eu-west-1:777958446307:parameter/crm-hub-common/DYNATRACE_INGESTION_URI"
+					}
+				]
+			},
+			"healthCheck": {
+				"retries": 3,
+				"command": [
+					"CMD-SHELL",
+					"curl -f http://localhost:5051/v1/health || exit 1"
+				],
+				"timeout": 5,
+				"interval": 30,
+				"startPeriod": 60
+			},
+			"secrets": [
+                {
+                    "name": "AWS_SSM_REFRESH_GROUPS_ENABLED",
+                    "valueFrom": "arn:aws:ssm:eu-west-1:777958446307:parameter/crm-hub/security-mgt/AWS_SSM_REFRESH_GROUPS_ENABLED"
+                },
+                {
+                    "name": "AWS_SECRETS_MANAGER_REFRESH_ENABLED",
+                    "valueFrom": "arn:aws:ssm:eu-west-1:777958446307:parameter/crm-hub/security-mgt/AWS_SECRETS_MANAGER_REFRESH_ENABLED"
+                },
+                {
+                    "name": "AWS_SSM_INITIAL_DELAY",
+                    "valueFrom": "arn:aws:ssm:eu-west-1:777958446307:parameter/crm-hub/security-mgt/AWS_SSM_INITIAL_DELAY"
+                },
+                {
+                    "name": "AWS_SSM_DELAY_MS",
+                    "valueFrom": "arn:aws:ssm:eu-west-1:777958446307:parameter/crm-hub/security-mgt/AWS_SSM_DELAY_MS"
+                }
+            ],
+			"environment": [
+				{
+				  "name": "AWS_REGION_STATIC",
+				  "value": "eu-west-1"
+				},
+				{
+				  "name": "AWS_TOKEN_INFO_TABLE",
+				  "value": "ib-cc-crm-hub-int-dyndb-security-mgt-tokenInfo"
+				},
+				{
+				  "name": "DT_LOGLEVELCON",
+				  "value": "INFO"
+				},
+				{
+				  "name": "LD_PRELOAD",
+				  "value": "/opt/dynatrace/oneagent/agent/lib64/liboneagentproc.so"
+				},
+				{
+				  "name": "DT_CUSTOM_PROP",
+				  "value": "business-domain=customer product=crm application=security-mgt environment=int"
+				},
+				{
+				  "name": "SALESFORCE_URL",
+				  "value": "https://test.salesforce.com/"
+				},
+				{
+				  "name": "SALESFORCE_MC_URL",
+				  "value": "https://mcm9xhb0gl166wksh1bgg639l33q.rest.marketingcloudapis.com"
+				},
+				{
+				  "name": "SALESFORCE_LOGIN_URL",
+				  "value": "https://test.salesforce.com/"
+				},
+				{
+				  "name": "SALESFORCE_MC_LOGIN_URL",
+				  "value": "https://mcm9xhb0gl166wksh1bgg639l33q.auth.marketingcloudapis.com/"
+				},
+                {
+                  "name": "AWS_SSM_GROUPS_PATH",
+                  "value": "/crm-hub/security-mgt/GROUPS"
+                },
+                {
+                  "name": "SALESFORCE_CLIENT_ID",
+                  "value": "crm-hub/security-mgt/SALESFORCE_CLIENT_ID"
+                },
+                {
+                  "name": "SALESFORCE_USER_NAME",
+                  "value": "crm-hub/security-mgt/SALESFORCE_USER_NAME"
+                },
+                {
+                  "name": "SALESFORCE_MC_CLIENT_ID",
+                  "value": "crm-hub/security-mgt/SALESFORCE_MC_CLIENT_ID"
+                },
+                {
+                  "name": "SALESFORCE_MC_CLIENT_SECRET",
+                  "value": "crm-hub/security-mgt/SALESFORCE_MC_CLIENT_SECRET"
+                },
+                {
+                  "name": "KEY_PASSWORD",
+                  "value": "crm-hub/security-mgt/KEY_PASSWORD"
+                },
+                {
+                  "name": "PRIVATE_KEY_SF",
+                  "value": "crm-hub/security-mgt/PRIVATE_KEY_SF"
+                },
+                {
+                  "name": "PRIVATE_KEY_SFMC",
+                  "value": "crm-hub/security-mgt/PRIVATE_KEY_SFMC"
+                },
+                {
+                  "name": "LOG_LEVEL_AWS",
+                  "value": "INFO"
+                },
+                {
+                  "name": "LOG_LEVEL_HTTP",
+                  "value": "DEBUG"
+                },
+                {
+                  "name": "LOG_LEVEL_SPRING",
+                  "value": "INFO"
+                },
+                {
+                  "name": "LOG_LEVEL_APP",
+                  "value": "DEBUG"
+                }
+			]
+		}
+	],
+	"family": "ib-cc-crm-hub-int-security-mgt-service",
+	"taskRoleArn": "arn:aws:iam::777958446307:role/ib-cc-crm-hub-int-security-mgt-service-task_role",
+	"executionRoleArn": "arn:aws:iam::777958446307:role/crm-hub-int-TaskExecutionPolicy",
+	"networkMode": "awsvpc",
+	"volumes": [],
+	"requiresCompatibilities": ["FARGATE"],
+	"cpu": "1024",
+	"memory": "2048",
+	"tags": []
+}

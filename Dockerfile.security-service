@@ -1,0 +1,31 @@
+FROM eclipse-temurin:21-jdk-jammy AS builder
+
+WORKDIR /app
+COPY pom.xml .
+COPY src src
+
+RUN apt-get update && apt-get install -y --no-install-recommends maven && \
+    mvn package -DskipTests --no-transfer-progress && \
+    rm -rf /root/.m2
+
+FROM eclipse-temurin:21-jdk-jammy
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libc6-dev curl && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /opt/dynatrace/oneagent/agent/lib64 && \
+    printf 'void __attribute__((constructor)) dt_oneagent_init(void) {}\n' > /tmp/oneagent_sim.c && \
+    gcc -shared -fPIC -o /opt/dynatrace/oneagent/agent/lib64/liboneagentproc.so /tmp/oneagent_sim.c && \
+    rm /tmp/oneagent_sim.c
+
+RUN mkdir -p /var/log/app && \
+    touch /var/log/app/security-mgt.log && \
+    chmod -R 777 /var/log/app
+
+WORKDIR /app
+COPY --from=builder /app/target/dynatrace-mvp.jar app.jar
+
+EXPOSE 8081
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

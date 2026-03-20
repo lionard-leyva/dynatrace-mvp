@@ -1,0 +1,47 @@
+services:
+  security-mgt-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.security-service
+    container_name: security-mgt-service
+    ports:
+      - "8081:8081"
+    environment:
+      envDT_LOGLEVELCON: "INFO"
+      DT_CUSTOM_PROP: "business-domain=customer product=crm application=security-mgt environment=poc"
+      LD_PRELOAD: "/opt/dynatrace/oneagent/agent/lib64/liboneagentproc.so"
+      SPRING_PROFILES_ACTIVE: "poc"
+      LOGGING_FILE_NAME: "/var/log/app/security-mgt.log"
+    volumes:
+      - app-logs:/var/log/app
+    networks:
+      - dynatrace-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health > /dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+
+  dynatrace-fluentbit:
+    image: fluent/fluent-bit:2.2.0
+    container_name: dynatrace-fluentbit-poc
+    ports:
+      - "2020:2020"
+    environment:
+      DT_CUSTOM_PROP: "business-domain=customer product=crm application=security-mgt environment=poc"
+    volumes:
+      - app-logs:/var/log/app
+      - ./fluent-bit-dynatrace.conf:/fluent-bit/etc/fluent-bit.conf:ro
+    networks:
+      - dynatrace-net
+    depends_on:
+      security-mgt-service:
+        condition: service_healthy
+
+volumes:
+  app-logs:
+
+networks:
+  dynatrace-net:
+    driver: bridge

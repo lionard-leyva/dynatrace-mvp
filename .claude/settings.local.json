@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(winget:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker ps:*)",
+      "Bash(curl -s http://localhost:8081/poc/test-dynatrace-simulation)",
+      "Bash(curl -s -H \"x-dynatrace-trace-id: CHAIN-TRACE-999\" -H \"x-dynatrace-span-id: api-gateway-span-aaa\" -H \"x-correlation-id: CORR-XYZ\" http://localhost:8081/poc/test-dynatrace-simulation)",
+      "Bash(curl -s http://localhost:8081/actuator/health)",
+      "Bash(curl -s http://localhost:2020/api/v1/metrics)",
+      "Bash(git remote:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git config:*)",
+      "Bash(git commit -m \"feat: Dynatrace MDC tracing simulation MVP:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

@@ -1,5 +1,6 @@
 package com.company.securitymgt.controller;
 
+import com.company.securitymgt.infrastructure.kafka.producer.InvoiceCommandProducer;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -17,6 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class DynatraceSimulationController {
 
     private static final String SERVICE_NAME = "ib-cc-crm-hub-int-security-mgt-service";
+
+    private final InvoiceCommandProducer invoiceCommandProducer;
+
+    public DynatraceSimulationController(InvoiceCommandProducer invoiceCommandProducer) {
+        this.invoiceCommandProducer = invoiceCommandProducer;
+    }
 
     @GetMapping("/test-dynatrace-simulation")
     public ResponseEntity<Map<String, String>> testDynatraceSimulation(
@@ -54,6 +61,8 @@ public class DynatraceSimulationController {
             log.info("Validating user permissions");
             log.warn("Security check - elevated permissions detected");
             log.info("Security validation completed successfully");
+
+            invoiceCommandProducer.sendCreateInvoice();
 
             Map<String, String> response = new LinkedHashMap<>();
             response.put("dt_trace_id",    traceId);

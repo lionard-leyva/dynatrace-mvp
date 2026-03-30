@@ -7,7 +7,8 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,14 +20,17 @@ public class DynatraceSimulationController {
 
     private static final String SERVICE_NAME = "ib-cc-crm-hub-int-security-mgt-service";
 
+    record CreateInvoiceRequest(String invoiceId, double amount) {}
+
     private final InvoiceCommandProducer invoiceCommandProducer;
 
     public DynatraceSimulationController(InvoiceCommandProducer invoiceCommandProducer) {
         this.invoiceCommandProducer = invoiceCommandProducer;
     }
 
-    @GetMapping("/test-dynatrace-simulation")
-    public ResponseEntity<Map<String, String>> testDynatraceSimulation(
+    @PostMapping("/invoices/commands/create")
+    public ResponseEntity<Map<String, String>> createInvoice(
+            @RequestBody CreateInvoiceRequest body,
             @RequestHeader(value = "x-dynatrace-trace-id", required = false) String traceIdHeader,
             @RequestHeader(value = "x-dynatrace-span-id", required = false) String spanIdHeader,
             @RequestHeader(value = "x-correlation-id", required = false) String correlationIdHeader) {
@@ -62,7 +66,7 @@ public class DynatraceSimulationController {
             log.warn("Security check - elevated permissions detected");
             log.info("Security validation completed successfully");
 
-            invoiceCommandProducer.sendCreateInvoice();
+            invoiceCommandProducer.sendCreateInvoice(body.invoiceId(), body.amount());
 
             Map<String, String> response = new LinkedHashMap<>();
             response.put("dt_trace_id",    traceId);

@@ -1,7 +1,9 @@
 package com.company.securitymgt.infrastructure.kafka.producer;
 
-public class CreateInvoiceMessage {
+import java.util.UUID;
 
-    public String invoiceId;
-    public double amount;
-}
+public record CreateInvoiceMessage (
+        UUID messageId,
+     String invoiceId,
+     double amount
+){}

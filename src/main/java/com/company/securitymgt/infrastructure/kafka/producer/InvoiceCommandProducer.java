@@ -8,6 +8,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -21,14 +22,12 @@ public class InvoiceCommandProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void sendCreateInvoice() {
-        CreateInvoiceMessage message = new CreateInvoiceMessage();
-        message.invoiceId = "INV-1";
-        message.amount = 100.0;
+    public void sendCreateInvoice(String invoiceId, double amount) {
 
+        CreateInvoiceMessage createInvoiceMessage = new CreateInvoiceMessage(UUID.randomUUID(), invoiceId, amount);
         // Usamos ProducerRecord para poder añadir headers antes del send
-        ProducerRecord<String, Object> record =
-                new ProducerRecord<>(TOPIC, message.invoiceId, message);
+        ProducerRecord<String, Object> record = new ProducerRecord<>(TOPIC, createInvoiceMessage.invoiceId(),  createInvoiceMessage.amount());
+
 
         // Propagamos el contexto de tracing Dynatrace desde MDC → headers Kafka
         // El consumidor los recibirá en ConsumerRecord.headers() y los meterá en su MDC
@@ -36,7 +35,8 @@ public class InvoiceCommandProducer {
         addTracingHeader(record, "x-dynatrace-span-id",  "my_span_id");
         addTracingHeader(record, "x-correlation-id",     "correlation_id");
 
-        log.info("Sending CreateInvoiceMessage to topic '{}' invoiceId={}", TOPIC, message.invoiceId);
+        log.info("Sending CreateInvoiceMessage to topic '{}' messageId={} invoiceId={} amount={}", TOPIC, createInvoiceMessage.messageId(),
+                createInvoiceMessage.invoiceId(), createInvoiceMessage.amount());
 
         kafkaTemplate.send(record);
     }
